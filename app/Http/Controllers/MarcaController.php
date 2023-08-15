@@ -15,7 +15,7 @@ class MarcaController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index()
     {
@@ -27,10 +27,13 @@ class MarcaController extends Controller
      * Store a newly created resource in storage.
      *
      * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
+        // Validação Nome e Imagem
+        $request->validate($this->marca->rules(), $this->marca->feedback());
+
         $marca = $this->marca->create($request->all());
         return response()->json($marca, 200);
     }
@@ -39,7 +42,7 @@ class MarcaController extends Controller
      * Display the specified resource.
      *
      * @param Integer $id
-     * @return string[]
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show($id)
     {
@@ -57,7 +60,7 @@ class MarcaController extends Controller
      *
      * @param \Illuminate\Http\Request $request
      * @param Integer $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
@@ -65,6 +68,17 @@ class MarcaController extends Controller
         if ($marca === null) {
             $errormsg = ['erro' => 'Não foi possível atualizar os dados. O recurso solicitado não existe.'];
             return response()->json($errormsg, 404);
+        }
+        if ($request->method() === 'PATCH') {
+            $regrasDinamicas = array();
+            foreach ($marca->rules() as $input => $regra) {
+                if (array_key_exists($input, $request->all())) {
+                    $regrasDinamicas[$input] = $regra;
+                }
+            }
+            $request->validate($regrasDinamicas, $marca->feedback());
+        } else {
+            $request->validate($marca->rules(), $marca->feedback());
         }
         $marca->update($request->all());
         return response()->json($marca, 200);
@@ -74,7 +88,7 @@ class MarcaController extends Controller
      * Remove the specified resource from storage.
      *
      * @param Integer
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
